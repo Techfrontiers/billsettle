@@ -20,6 +20,49 @@ bill ↔ payment ↔ receipt — so "paid or not yet?" disputes mean scrolling c
 **Scope cuts (deliberate): ONE bill flow, ONE stablecoin, testnet demo.
 NO payroll, NO remittance, NO marketplace.**
 
+## Status — slice 3 (Nov 1, 2026, deployed to NEAR TESTNET)
+
+- Bills contract: **billsettle-bills.testnet**
+  (deploy tx `7iQUnbvSvQ7iTdf4iBKTmV2eNbmhSnuoQjiFdxRj6k8e`).
+- Token contract (BSDD, mock NEP-141, 6 decimals): **billsettle-token.testnet**
+  (deploy tx `47MHQE5JkHQSKZ87wyt7C6X1AaukaYmU41MwM3kCnDdT`).
+- Demo accounts (throwaway, testnet only): shop `billsettle-shop.testnet`,
+  customer `billsettle-customer.testnet`.
+- Full on-chain pay flow verified: shop created bill B1 (620 BSDD) →
+  customer paid via `ft_transfer_call` (msg `B1`) → bill flipped to **Paid**,
+  payer recorded, bills contract holds exactly 620,000,000 units, customer
+  balance exactly 10,000,000,000 − 620,000,000 = 9,380,000,000.
+  Payment tx: `9fxsLpNoP1LFPwMMnjZjdqWqZejvtxB3AJxocZDXr9ge`
+  (https://explorer.testnet.near.org/transactions/9fxsLpNoP1LFPwMMnjZjdqWqZejvtxB3AJxocZDXr9ge).
+- Second demo bill B2 (430 BSDD) left **Unpaid** for visitors to pay.
+- Frontend: `docs/` (dashboard by status + bill page + QR + receipt),
+  hosted on GitHub Pages — see Demo below.
+- NOT yet built: in-browser wallet signing on the demo page (page is
+  view-only for now; pay flow is proven on-chain + documented below),
+  demo video, X post (his), submission (his, late before Nov 15 06:59 Bangkok).
+
+## Demo
+
+Live demo: https://techfrontiers.github.io/billsettle/
+
+Do X → see Y (all on NEAR testnet, no real money):
+
+1. Open the demo → dashboard shows B1 **Paid** and B2 **Unpaid**
+   (live `list_bills` view calls, no wallet needed).
+2. Click B1 → bill page shows items, total 620 BSDD, status Paid,
+   payer `billsettle-customer.testnet`, and the receipt with the
+   payment transaction link.
+3. Click B2 → bill page shows items, total 430 BSDD, status Unpaid,
+   and a QR code linking back to that bill page.
+4. Pay B2 from a testnet wallet: call `ft_transfer_call` on
+   `billsettle-token.testnet` with `receiver_id` =
+   `billsettle-bills.testnet`, `amount` = `"430000000"`, `msg` = `"B2"`
+   (1 yoctoNEAR deposit, ≥30 TGas) → reload the dashboard and B2
+   shows **Paid**.
+5. Shop-side (operator, CLI): create a bill with
+   `create_bill` on `billsettle-bills.testnet` signed as the shop
+   account, then it appears on the dashboard.
+
 ## Status — slice 2 (Nov 1, 2026, built on the NexNodo box)
 
 - Contract compiles + **5/5 unit tests pass, zero warnings**.

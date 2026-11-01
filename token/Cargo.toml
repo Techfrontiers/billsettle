@@ -1,0 +1,20 @@
+[package]
+name = "billsettle-token"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+# Pinned exact, matching the billsettle contract (verified to resolve 2026-11-01).
+near-sdk = "=5.30.0"
+near-contract-standards = "=5.30.0"
+
+[profile.release]
+codegen-units = 1
+opt-level = "z"
+lto = true
+debug = false
+panic = "abort"
+overflow-checks = true
