@@ -20,14 +20,19 @@ bill ↔ payment ↔ receipt — so "paid or not yet?" disputes mean scrolling c
 **Scope cuts (deliberate): ONE bill flow, ONE stablecoin, testnet demo.
 NO payroll, NO remittance, NO marketplace.**
 
-## Status — slice 1 (Nov 1, 2026)
+## Status — slice 2 (Nov 1, 2026, built on the NexNodo box)
 
-- Repo created, contract skeleton in `contract/` (bill registry).
-- NOT yet compiled in this environment: no Rust toolchain here yet.
-  Compile is slice 2 (install cargo, then `cargo test` + build).
-- NOT yet built: pay-flow frontend, QR page, dashboard, hosted demo, video.
+- Contract compiles + **5/5 unit tests pass, zero warnings**.
+- Wasm artifact: `target/wasm32-unknown-unknown/release/billsettle.wasm`
+  (307,920 bytes, built Nov 1, 2026 on the box).
+- SDK: near-sdk **5.30.0** (pinned exact in `contract/Cargo.toml`).
+  The 4.x line was abandoned: its `parity-secp256k1 0.7.0` dependency is
+  yanked, so no fresh 4.1.1 build can resolve. `Cargo.lock` is committed so
+  the exact tree that compiled is reproducible.
+- NOT yet built: testnet deploy, pay-flow frontend, QR page, dashboard,
+  hosted demo, video.
 
-## Contract methods (`contract/src/lib.rs`, near-sdk 4.x)
+## Contract methods (`contract/src/lib.rs`, near-sdk 5.30.0)
 
 | Method | Type | What it does |
 |---|---|---|
@@ -61,15 +66,26 @@ Two facts that shape the frontend:
   on-chain payment either way. If Circle faucet access for NEAR is confirmed,
   swap one address: set `ft_contract` to the real testnet USDC contract above.
 
-## Build (once cargo is installed)
+## Build (on the box, Rust 1.99.1)
 
 ```sh
 cd contract
-cargo test
-cargo near build   # or: cargo build --target wasm32-unknown-unknown --release
+cargo test                                          # unit tests (needs the
+                                                    # [dev-dependencies] unit-testing feature)
+cargo build --target wasm32-unknown-unknown --release
 ```
 
-Deploy + call flow (testnet) lands in slice 2.
+Notes from the build:
+
+- near-sdk 5.x **refuses a plain `cargo build`/`cargo check`** (compile guard
+  in its lib) — always pass the wasm target, or use `cargo near build`.
+- `store::IterableMap` is the current iterable map (`UnorderedMap` is
+  deprecated in 5.30.0 for iteration performance; nothing is deployed yet,
+  so no storage migration is involved).
+- The wasm artifact is NOT committed to git (see `.gitignore`); rebuild it
+  from `contract/` any time.
+
+Deploy + call flow (testnet) lands in slice 3.
 
 ## Disclosure (for the submission)
 
