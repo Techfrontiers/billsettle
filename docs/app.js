@@ -258,8 +258,9 @@ async function initWallet() {
       fallbackRpcUrls: RPC_URLS,
       modules: [meteorMod.setupMeteorWallet()],
     });
+    // Omit contractId so sign-in does not require gas for an unused FunctionCall AddKey;
+    // ft_transfer_call (1 yoctoNEAR) always signs via Meteor's approval popup on token contract.
     var modal = modalMod.setupModal(selector, {
-      contractId: BILLS_CONTRACT,
       theme: "light",
       description: "Connect your NEAR testnet wallet (Meteor) to pay unpaid BSDD bills.",
     });
