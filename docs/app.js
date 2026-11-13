@@ -25,9 +25,10 @@ var ONE_YOCTO = "1";
 var RECEIPTS_STORAGE_KEY = "billsettle:receipts:" + BILLS_CONTRACT;
 
 // Bill id -> payment transaction hash, recorded from real on-chain payments.
-// B1 was paid in the slice-3 CLI test; its hash is the receipt.
+// B1 (slice-3 CLI) and B2 (slice-4 Meteor browser test) verified on NEAR testnet.
 var KNOWN_RECEIPTS = {
   B1: "9fxsLpNoP1LFPwMMnjZjdqWqZejvtxB3AJxocZDXr9ge",
+  B2: "8FZRqV8nAbXosgXfR6BwBGv6utb3LMFPKEP4Gf1PuJ9k",
 };
 
 var currentView = { type: "dashboard", filter: "" };
