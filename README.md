@@ -20,6 +20,29 @@ bill ↔ payment ↔ receipt — so "paid or not yet?" disputes mean scrolling c
 **Scope cuts (deliberate): ONE bill flow, ONE stablecoin, testnet demo.
 NO payroll, NO remittance, NO marketplace.**
 
+## Status — slice 4 (Nov 13, 2026, in-browser wallet signing)
+
+- **No-build-step frontend (`docs/`):** loads `@near-wallet-selector/core`,
+  `@near-wallet-selector/meteor-wallet`, and `@near-wallet-selector/modal-ui`
+  (`@10.1.4`) dynamically via jsDelivr ESM so view-only mode still renders
+  immediately if wallet CDNs are unreachable.
+- **Connect / Disconnect (`header`):** clicking **Connect wallet** opens the
+  Wallet Selector modal (**Meteor Wallet** first on NEAR testnet), shows the
+  connected account id and live `BSDD` balance (`ft_balance_of`), and lets the
+  user disconnect back to view-only mode.
+- **Pay Unpaid bills on-page:** on any `Unpaid` bill (e.g. `B2`), a connected
+  wallet sees its `BSDD` balance, an insufficient-balance guard, and a **Pay**
+  button that signs `ft_transfer_call` on `billsettle-token.testnet`
+  (`receiver_id: "billsettle-bills.testnet"`, `amount: "<total>"`, `msg: "<id>"`,
+  `1 yoctoNEAR` deposit, `100 TGas`).
+- **On-chain confirmation & real receipt:** inspects execution receipts for
+  NEP-141 refund/panic failures, polls `get_bill` on `billsettle-bills.testnet`
+  until `status === "Paid"`, and saves the paying transaction hash in browser
+  `localStorage` (`billsettle:receipts:billsettle-bills.testnet`, keeping
+  `KNOWN_RECEIPTS.B1` intact) so reloads preserve the receipt Explorer link.
+- Remaining (owner manual tasks): end-to-end Meteor testnet payment video,
+  public X post, and hackathon submission (due Nov 15, 06:59 Bangkok).
+
 ## Status — slice 3 (Nov 1, 2026, deployed to NEAR TESTNET)
 
 - Bills contract: **billsettle-bills.testnet**
@@ -37,9 +60,6 @@ NO payroll, NO remittance, NO marketplace.**
 - Second demo bill B2 (430 BSDD) left **Unpaid** for visitors to pay.
 - Frontend: `docs/` (dashboard by status + bill page + QR + receipt),
   hosted on GitHub Pages — see Demo below.
-- NOT yet built: in-browser wallet signing on the demo page (page is
-  view-only for now; pay flow is proven on-chain + documented below),
-  demo video, X post (his), submission (his, late before Nov 15 06:59 Bangkok).
 
 ## Demo
 
@@ -48,17 +68,23 @@ Live demo: https://techfrontiers.github.io/billsettle/
 Do X → see Y (all on NEAR testnet, no real money):
 
 1. Open the demo → dashboard shows B1 **Paid** and B2 **Unpaid**
-   (live `list_bills` view calls, no wallet needed).
+   (live `list_bills` view calls, no wallet needed). Header shows
+   **View-only mode** with a **Connect wallet** button.
 2. Click B1 → bill page shows items, total 620 BSDD, status Paid,
    payer `billsettle-customer.testnet`, and the receipt with the
    payment transaction link.
 3. Click B2 → bill page shows items, total 430 BSDD, status Unpaid,
-   and a QR code linking back to that bill page.
-4. Pay B2 from a testnet wallet: call `ft_transfer_call` on
-   `billsettle-token.testnet` with `receiver_id` =
-   `billsettle-bills.testnet`, `amount` = `"430000000"`, `msg` = `"B2"`
-   (1 yoctoNEAR deposit, ≥30 TGas) → reload the dashboard and B2
-   shows **Paid**.
+   a QR code linking back to that bill page, and **Connect wallet to pay**.
+4. Connect & pay B2 from the demo page (Meteor Wallet on NEAR testnet):
+   - Click **Connect wallet** → select **Meteor Wallet** → approve sign-in;
+     the header displays `<account>.testnet` and its live `BSDD` balance.
+   - Click **Pay 430 BSDD** → approve the `ft_transfer_call` transaction
+     (`1 yoctoNEAR` deposit, `100 TGas`) in Meteor → after on-chain `get_bill`
+     confirms `Paid`, the page flips B2 to **Paid** and displays the real
+     transaction hash + Explorer link (persisted in browser `localStorage`).
+   - CLI / external wallet equivalent: call `ft_transfer_call` on
+     `billsettle-token.testnet` with `receiver_id` = `billsettle-bills.testnet`,
+     `amount` = `"430000000"`, `msg` = `"B2"` (`1 yoctoNEAR`, ≥30 TGas).
 5. Shop-side (operator, CLI): create a bill with
    `create_bill` on `billsettle-bills.testnet` signed as the shop
    account, then it appears on the dashboard.
