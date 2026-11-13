@@ -3,75 +3,852 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>BillSettle — small-shop bills, paid and receipted on NEAR</title>
+<title>BillSettle — On-Chain Invoice Settlement on NEAR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@near-wallet-selector/modal-ui@10.1.4/styles.css">
 <style>
-  :root { --ink: #101828; --muted: #667085; --line: #eaecf0; --bg: #f9fafb; --green: #027a48; --green-bg: #ecfdf3; --amber: #b54708; --amber-bg: #fffaeb; --blue: #175cd3; }
+  :root {
+    --ink: #0f172a;
+    --ink-2: #334155;
+    --muted: #64748b;
+    --line: #e2e8f0;
+    --line-soft: #f1f5f9;
+    --bg: #f4f6fb;
+    --surface: #ffffff;
+    --brand: #155eef;
+    --brand-hover: #004eeb;
+    --brand-soft: #eff4ff;
+    --green: #057a55;
+    --green-bg: #ecfdf5;
+    --green-border: #a7f3d0;
+    --amber: #b45309;
+    --amber-bg: #fffbeb;
+    --amber-border: #fde68a;
+    --red: #b42318;
+    --red-bg: #fef3f2;
+    --red-border: #fecdca;
+    --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+    --shadow-md: 0 8px 24px -6px rgba(15, 23, 42, 0.08), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
+    --radius: 14px;
+  }
+
   * { box-sizing: border-box; }
-  body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--ink); background: var(--bg); }
-  header { background: #101828; color: #fff; padding: 28px 20px; }
-  header .wrap, main { max-width: 760px; margin: 0 auto; }
-  .header-top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 14px; }
-  .wallet-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.16); padding: 8px 12px; border-radius: 10px; }
-  #wallet-status { font-size: 13px; color: #e4e7ec; line-height: 1.4; }
-  h1 { margin: 0 0 6px; font-size: 28px; }
-  header p { margin: 4px 0; color: #d0d5dd; }
-  .badge { display: inline-block; background: #f79009; color: #101828; font-weight: 700; font-size: 12px; padding: 3px 10px; border-radius: 999px; }
-  a { color: var(--blue); }
-  header a { color: #84caff; }
-  main { padding: 20px; }
-  .card { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 18px; margin-bottom: 14px; }
-  .pill { display: inline-block; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; }
-  .pill.paid { color: var(--green); background: var(--green-bg); }
-  .pill.unpaid { color: var(--amber); background: var(--amber-bg); }
-  .tabs { display: flex; gap: 8px; margin-bottom: 14px; }
-  .tabs button { border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 8px 16px; font-size: 14px; cursor: pointer; }
-  .tabs button.active { background: #101828; color: #fff; border-color: #101828; }
-  .bill { cursor: pointer; }
-  .bill h3 { margin: 0 0 4px; }
-  .bill .meta { color: var(--muted); font-size: 14px; }
-  table { width: 100%; border-collapse: collapse; margin: 10px 0; }
-  td { padding: 6px 0; border-bottom: 1px solid var(--line); }
-  td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
-  .total { font-size: 20px; font-weight: 700; }
-  .qrbox { text-align: center; margin: 16px 0; }
-  .qrbox img, .qrbox canvas { margin: 0 auto; }
-  .mono { font-family: ui-monospace, Menlo, monospace; font-size: 13px; word-break: break-all; }
-  .muted { color: var(--muted); font-size: 14px; }
-  .err { color: #b42318; background: #fef3f2; border: 1px solid #fecdca; padding: 12px; border-radius: 8px; margin: 10px 0; font-size: 14px; }
-  .warn { color: var(--amber); background: var(--amber-bg); border: 1px solid #fedf89; padding: 12px; border-radius: 8px; margin: 10px 0; font-size: 14px; }
-  .ok { color: var(--green); background: var(--green-bg); border: 1px solid #abefc6; padding: 12px; border-radius: 8px; margin: 10px 0; font-size: 14px; }
-  .btn { display: inline-block; background: var(--blue); color: #fff !important; text-decoration: none; border: none; padding: 10px 18px; border-radius: 8px; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
-  .btn.secondary { background: #fff; color: var(--ink) !important; border: 1px solid var(--line); }
-  .btn:disabled { opacity: 0.6; cursor: not-allowed; }
-  .wallet-bar .btn { padding: 7px 12px; font-size: 13px; }
-  .wallet-bar .btn.secondary { background: rgba(255, 255, 255, 0.14); color: #fff !important; border-color: rgba(255, 255, 255, 0.25); }
+
+  body {
+    margin: 0;
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    color: var(--ink);
+    background:
+      radial-gradient(900px 360px at 50% -80px, rgba(21, 94, 239, 0.08), transparent 70%),
+      var(--bg);
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  a { color: var(--brand); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .mono {
+    font-family: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+    font-size: 12.5px;
+    word-break: break-all;
+  }
+
+  /* Header / Enterprise Command Bar */
+  header.topbar {
+    background:
+      radial-gradient(640px 240px at 14% -20%, rgba(16, 185, 129, 0.16), transparent 65%),
+      radial-gradient(620px 260px at 88% -10%, rgba(59, 130, 246, 0.22), transparent 65%),
+      linear-gradient(160deg, #090e1a 0%, #0f172a 55%, #111c34 100%);
+    color: #f8fafc;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 22px 20px 20px;
+  }
+
+  header.topbar .wrap,
+  main {
+    max-width: 1020px;
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  .header-top {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+  }
+
+  .brand-mark {
+    width: 42px;
+    height: 42px;
+    border-radius: 11px;
+    background: linear-gradient(135deg, #10b981 0%, #2563eb 100%);
+    box-shadow: 0 6px 18px rgba(37, 99, 235, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+  }
+
+  .brand-title-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .brand h1 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: #ffffff;
+  }
+
+  .brand-sub {
+    margin: 3px 0 0;
+    font-size: 13.5px;
+    color: #94a3b8;
+  }
+
+  .env-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(245, 158, 11, 0.14);
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    color: #fcd34d;
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 3px 9px;
+    border-radius: 999px;
+  }
+
+  .env-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #fbbf24;
+    box-shadow: 0 0 8px #fbbf24;
+  }
+
+  .wallet-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    padding: 7px 8px 7px 14px;
+    border-radius: 12px;
+  }
+
+  .wallet-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #64748b;
+    flex-shrink: 0;
+  }
+
+  .status-dot.connected {
+    background: #10b981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.22);
+  }
+
+  #wallet-status {
+    font-size: 13px;
+    color: #e2e8f0;
+    line-height: 1.35;
+  }
+
+  .registry-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 14px;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    font-size: 12px;
+    color: #94a3b8;
+  }
+
+  .registry-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(15, 23, 42, 0.55);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 8px;
+    padding: 4px 10px;
+    color: #cbd5e1;
+  }
+
+  .registry-chip a {
+    color: #7dd3fc;
+    font-weight: 500;
+  }
+
+  /* Main Container */
+  main {
+    padding: 24px 20px 44px;
+    flex: 1;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 20px 22px;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 16px;
+  }
+
+  .section-head {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  .section-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+  }
+
+  /* KPI Strip */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .kpi-label {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .kpi-value {
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+  }
+
+  .kpi-sub {
+    margin-top: 4px;
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+
+  .kpi-card.settled .kpi-value { color: var(--green); }
+  .kpi-card.pending .kpi-value { color: var(--amber); }
+
+  /* Tabs */
+  .tabs {
+    display: inline-flex;
+    gap: 4px;
+    background: #e9eef5;
+    padding: 4px;
+    border-radius: 10px;
+  }
+
+  .tabs button {
+    border: none;
+    background: transparent;
+    color: var(--ink-2);
+    border-radius: 7px;
+    padding: 7px 14px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .tabs button:hover {
+    color: var(--ink);
+  }
+
+  .tabs button.active {
+    background: var(--surface);
+    color: var(--ink);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1);
+  }
+
+  /* Bill List Cards */
+  .bill-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .bill {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.14s ease, box-shadow 0.14s ease, border-color 0.14s ease;
+  }
+
+  .bill:hover {
+    transform: translateY(-1px);
+    border-color: #cbd5e1;
+    box-shadow: var(--shadow-md);
+  }
+
+  .bill-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+  }
+
+  .bill-id-badge {
+    width: 44px;
+    height: 44px;
+    border-radius: 11px;
+    background: var(--line-soft);
+    border: 1px solid var(--line);
+    display: grid;
+    place-items: center;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--ink);
+    flex-shrink: 0;
+  }
+
+  .bill.is-unpaid .bill-id-badge {
+    background: var(--amber-bg);
+    border-color: var(--amber-border);
+    color: var(--amber);
+  }
+
+  .bill.is-paid .bill-id-badge {
+    background: var(--green-bg);
+    border-color: var(--green-border);
+    color: var(--green);
+  }
+
+  .bill-title-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+
+  .bill h3 {
+    margin: 0;
+    font-size: 15.5px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  .bill .meta {
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
+  .bill-right {
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .bill-right .total {
+    font-size: 18px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+  }
+
+  .bill-cta {
+    margin-top: 3px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--brand);
+  }
+
+  .bill.is-paid .bill-cta {
+    color: var(--muted);
+  }
+
+  /* Status Pills */
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11.5px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+  }
+
+  .pill::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  .pill.paid {
+    color: var(--green);
+    background: var(--green-bg);
+    border-color: var(--green-border);
+  }
+
+  .pill.unpaid {
+    color: var(--amber);
+    background: var(--amber-bg);
+    border-color: var(--amber-border);
+  }
+
+  /* How-it-works Grid */
+  .flow-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin: 14px 0 16px;
+  }
+
+  .flow-step {
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 12px 13px;
+  }
+
+  .flow-num {
+    display: inline-grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    background: var(--ink);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .flow-step strong {
+    display: block;
+    font-size: 13px;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+
+  .flow-step span {
+    display: block;
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--muted);
+  }
+
+  /* Bill Detail Layout */
+  .detail-topbar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .bill-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.45fr) minmax(260px, 1fr);
+    gap: 16px;
+    align-items: start;
+  }
+
+  .invoice-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 12px;
+  }
+
+  .invoice-header h2 {
+    margin: 0 0 4px;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+  }
+
+  #app table.invoice-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 8px 0 14px;
+  }
+
+  #app table.invoice-table th {
+    text-align: left;
+    font-size: 11.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    padding: 0 0 8px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  #app table.invoice-table th:last-child,
+  #app table.invoice-table td:last-child {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  #app table.invoice-table td {
+    padding: 11px 0;
+    border-bottom: 1px solid var(--line-soft);
+    font-size: 14.5px;
+    color: var(--ink);
+  }
+
+  #app table.invoice-table td:last-child {
+    font-weight: 600;
+  }
+
+  .invoice-total-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 14px 16px;
+    border-radius: 10px;
+    background: var(--bg);
+    border: 1px solid var(--line);
+  }
+
+  .invoice-total-bar .label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink-2);
+  }
+
+  .invoice-total-bar .total {
+    font-size: 22px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+  }
+
+  /* QR Card */
+  .qr-card {
+    text-align: center;
+  }
+
+  .qr-card h3 {
+    margin: 0 0 4px;
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .qr-frame {
+    display: inline-block;
+    padding: 14px;
+    background: #ffffff;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: var(--shadow-sm);
+    margin: 12px 0;
+  }
+
+  .qrbox img,
+  .qrbox canvas {
+    display: block;
+    margin: 0 auto;
+  }
+
+  .url-box {
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 11.5px;
+    color: var(--ink-2);
+    margin-bottom: 10px;
+  }
+
+  /* Receipt & Settlement Card */
+  .card-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .card-title-row h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  .receipt-grid {
+    display: grid;
+    gap: 10px;
+    margin: 12px 0 4px;
+  }
+
+  .receipt-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 6px 14px;
+    padding: 10px 12px;
+    border-radius: 9px;
+    background: var(--bg);
+    border: 1px solid var(--line-soft);
+    font-size: 13.5px;
+  }
+
+  .receipt-row .k {
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  .receipt-row .v {
+    color: var(--ink);
+    font-weight: 600;
+    text-align: right;
+  }
+
+  .wallet-summary-box {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px 14px;
+    background: var(--brand-soft);
+    border: 1px solid #d1e0ff;
+    border-radius: 10px;
+    margin: 10px 0 12px;
+    font-size: 13.5px;
+  }
+
+  .muted { color: var(--muted); font-size: 13.5px; line-height: 1.5; }
+  .err { color: var(--red); background: var(--red-bg); border: 1px solid var(--red-border); padding: 12px 14px; border-radius: 10px; margin: 10px 0; font-size: 13.5px; }
+  .warn { color: var(--amber); background: var(--amber-bg); border: 1px solid var(--amber-border); padding: 12px 14px; border-radius: 10px; margin: 10px 0; font-size: 13.5px; }
+  .ok { color: var(--green); background: var(--green-bg); border: 1px solid var(--green-border); padding: 12px 14px; border-radius: 10px; margin: 10px 0; font-size: 13.5px; }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    background: var(--brand);
+    color: #fff !important;
+    text-decoration: none !important;
+    border: 1px solid transparent;
+    padding: 10px 18px;
+    border-radius: 9px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.14s ease, transform 0.1s ease, box-shadow 0.14s ease;
+    box-shadow: 0 1px 2px rgba(21, 94, 239, 0.25);
+  }
+
+  .btn:hover:not(:disabled) {
+    background: var(--brand-hover);
+  }
+
+  .btn:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+
+  .btn.secondary {
+    background: var(--surface);
+    color: var(--ink) !important;
+    border-color: var(--line);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .btn.secondary:hover:not(:disabled) {
+    background: var(--line-soft);
+    border-color: #cbd5e1;
+  }
+
+  .btn.sm {
+    padding: 7px 12px;
+    font-size: 12.5px;
+    border-radius: 8px;
+  }
+
+  .btn.lg {
+    width: 100%;
+    padding: 12px 20px;
+    font-size: 15px;
+  }
+
+  .btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  .wallet-bar .btn {
+    padding: 7px 13px;
+    font-size: 13px;
+    border-radius: 8px;
+  }
+
+  .wallet-bar .btn.secondary {
+    background: rgba(255, 255, 255, 0.12);
+    color: #f8fafc !important;
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: none;
+  }
+
+  .wallet-bar .btn.secondary:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.2);
+  }
+
   .pay-box { margin: 12px 0; }
-  details.muted summary { cursor: pointer; }
-  code { background: #f2f4f7; padding: 2px 6px; border-radius: 4px; font-size: 13px; }
-  pre { background: #101828; color: #d0d5dd; padding: 14px; border-radius: 8px; overflow-x: auto; font-size: 13px; }
+
+  details.muted summary {
+    cursor: pointer;
+    font-weight: 500;
+    margin-top: 8px;
+  }
+
+  code {
+    background: #eef2f6;
+    color: var(--ink);
+    padding: 2px 6px;
+    border-radius: 5px;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 12px;
+  }
+
+  pre {
+    background: #0f172a;
+    color: #cbd5e1;
+    padding: 14px 16px;
+    border-radius: 10px;
+    border: 1px solid #1e293b;
+    overflow-x: auto;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 12.5px;
+    line-height: 1.55;
+    margin: 10px 0 0;
+  }
+
+  @media (max-width: 780px) {
+    .kpi-grid { grid-template-columns: 1fr; }
+    .flow-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .bill-grid { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 540px) {
+    .flow-grid { grid-template-columns: 1fr; }
+    .bill { flex-direction: column; align-items: flex-start; }
+    .bill-right { text-align: left; }
+    .wallet-bar { width: 100%; justify-content: space-between; }
+  }
 </style>
 </head>
 <body>
-<header>
+<header class="topbar">
   <div class="wrap">
     <div class="header-top">
-      <div>
-        <h1>🧾 BillSettle</h1>
-        <p>Small-shop bills, paid and receipted on NEAR. <span class="badge">TESTNET DEMO — no real money</span></p>
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 3h16v18l-3-2-2.5 2-2.5-2-2.5 2-2.5-2-3 2V3z"/>
+            <path d="M8.5 9h7M8.5 13h5"/>
+          </svg>
+        </div>
+        <div>
+          <div class="brand-title-row">
+            <h1>BillSettle</h1>
+            <span class="env-pill"><span class="env-dot"></span>NEAR Testnet · Demo Only</span>
+          </div>
+          <p class="brand-sub">Small-shop invoices settled in stablecoin with verifiable on-chain receipts.</p>
+        </div>
       </div>
+
       <div class="wallet-bar" aria-live="polite">
-        <span id="wallet-status">View-only mode</span>
+        <span class="wallet-meta">
+          <span class="status-dot" id="wallet-dot"></span>
+          <span id="wallet-status">View-only mode</span>
+        </span>
         <button type="button" class="btn secondary" id="wallet-action-btn" disabled>Loading wallet…</button>
       </div>
     </div>
-    <p class="mono">Bills contract: <a href="https://explorer.testnet.near.org/accounts/billsettle-bills.testnet" target="_blank" rel="noopener">billsettle-bills.testnet</a><br>
-    Token contract (BSDD): <a href="https://explorer.testnet.near.org/accounts/billsettle-token.testnet" target="_blank" rel="noopener">billsettle-token.testnet</a></p>
+
+    <div class="registry-bar">
+      <span class="registry-chip">
+        <span>Bills Registry:</span>
+        <a class="mono" href="https://explorer.testnet.near.org/accounts/billsettle-bills.testnet" target="_blank" rel="noopener">billsettle-bills.testnet ↗</a>
+      </span>
+      <span class="registry-chip">
+        <span>Token (BSDD):</span>
+        <a class="mono" href="https://explorer.testnet.near.org/accounts/billsettle-token.testnet" target="_blank" rel="noopener">billsettle-token.testnet ↗</a>
+      </span>
+    </div>
   </div>
 </header>
 <main id="app">
-  <p class="muted">Loading bills from NEAR testnet…</p>
+  <div class="card"><p class="muted" style="margin:0">Loading bills from NEAR testnet…</p></div>
 </main>
 <script src="app.js"></script>
 </body>

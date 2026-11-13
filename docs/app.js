@@ -33,6 +33,7 @@ var KNOWN_RECEIPTS = {
 
 var currentView = { type: "dashboard", filter: "" };
 var currentBill = null;
+var cachedSummary = null;
 var renderSeq = 0;
 
 var walletState = {
@@ -161,6 +162,10 @@ function renderError(msg) {
 function updateHeaderWallet() {
   var statusEl = document.getElementById("wallet-status");
   var btn = document.getElementById("wallet-action-btn");
+  var dot = document.getElementById("wallet-dot");
+  if (dot) {
+    dot.className = walletState.accountId ? "status-dot connected" : "status-dot";
+  }
   if (!statusEl || !btn) return;
 
   if (walletState.accountId) {
@@ -286,14 +291,93 @@ async function initWallet() {
   }
 }
 
+function compareBillId(a, b) {
+  return String(a.id).localeCompare(String(b.id), undefined, { numeric: true, sensitivity: "base" });
+}
+
+function computeSummary(bills) {
+  var paidCount = 0;
+  var unpaidCount = 0;
+  var settled = 0n;
+  var pending = 0n;
+  for (var i = 0; i < bills.length; i++) {
+    var amt = BigInt(bills[i].total || "0");
+    if (bills[i].status === "Paid") {
+      paidCount += 1;
+      settled += amt;
+    } else {
+      unpaidCount += 1;
+      pending += amt;
+    }
+  }
+  return {
+    totalCount: bills.length,
+    paidCount: paidCount,
+    unpaidCount: unpaidCount,
+    totalVolume: settled + pending,
+    settled: settled,
+    pending: pending,
+  };
+}
+
+function renderKpis(summary) {
+  var row = document.getElementById("kpi-row");
+  if (!row || !summary) return;
+  row.innerHTML =
+    '<div class="kpi-card">' +
+      '<div class="kpi-label">Total Billed</div>' +
+      '<div class="kpi-value">' + esc(fmtBSDD(summary.totalVolume)) + "</div>" +
+      '<div class="kpi-sub">' + summary.totalCount + " invoice(s) on NEAR testnet</div>" +
+    "</div>" +
+    '<div class="kpi-card settled">' +
+      '<div class="kpi-label">Settled On-Chain</div>' +
+      '<div class="kpi-value">' + esc(fmtBSDD(summary.settled)) + "</div>" +
+      '<div class="kpi-sub">' + summary.paidCount + " verified paid</div>" +
+    "</div>" +
+    '<div class="kpi-card pending">' +
+      '<div class="kpi-label">Awaiting Settlement</div>' +
+      '<div class="kpi-value">' + esc(fmtBSDD(summary.pending)) + "</div>" +
+      '<div class="kpi-sub">' + summary.unpaidCount + " open unpaid</div>" +
+    "</div>";
+
+  var tabAll = document.querySelector('.tabs button[data-f=""]');
+  var tabUnpaid = document.querySelector('.tabs button[data-f="Unpaid"]');
+  var tabPaid = document.querySelector('.tabs button[data-f="Paid"]');
+  if (tabAll) tabAll.textContent = "All bills (" + summary.totalCount + ")";
+  if (tabUnpaid) tabUnpaid.textContent = "Unpaid (" + summary.unpaidCount + ")";
+  if (tabPaid) tabPaid.textContent = "Paid (" + summary.paidCount + ")";
+}
+
+function bindCopy(btnId, text, defaultLabel) {
+  var btn = document.getElementById(btnId);
+  if (!btn || !text) return;
+  btn.addEventListener("click", function () {
+    if (!navigator.clipboard || !navigator.clipboard.writeText) return;
+    navigator.clipboard.writeText(text).then(function () {
+      btn.textContent = "Copied ✓";
+      setTimeout(function () {
+        if (document.body.contains(btn)) btn.textContent = defaultLabel;
+      }, 1500);
+    }).catch(function () {});
+  });
+}
+
 function billCard(b) {
+  var isPaid = b.status === "Paid";
   return (
-    '<div class="card bill" data-id="' + esc(b.id) + '">' +
-    "<h3>Bill " + esc(b.id) + " " + pill(b.status) + "</h3>" +
-    '<div class="meta">' + b.items.length + " item(s) · Shop: " + esc(b.shop) +
-    (b.payer ? " · Paid by: " + esc(b.payer) : "") + "</div>" +
-    '<div class="total">' + fmtBSDD(b.total) + "</div>" +
-    '<div class="meta">Click for details, QR code and receipt.</div>' +
+    '<div class="bill ' + (isPaid ? "is-paid" : "is-unpaid") + '" data-id="' + esc(b.id) + '" role="button" tabindex="0">' +
+      '<div class="bill-left">' +
+        '<div class="bill-id-badge">' + esc(b.id) + "</div>" +
+        "<div>" +
+          '<div class="bill-title-row"><h3>Bill ' + esc(b.id) + "</h3> " + pill(b.status) + "</div>" +
+          '<div class="meta">' + b.items.length + " item(s) · Shop: <span class='mono'>" + esc(b.shop) + "</span>" +
+          (b.payer ? " · Paid by <span class='mono'>" + esc(b.payer) + "</span>" : "") + "</div>" +
+        "</div>" +
+      "</div>" +
+      '<div class="bill-right">' +
+        '<div class="total">' + fmtBSDD(b.total) + "</div>" +
+        '<div class="bill-cta">' + (isPaid ? "View receipt →" : "Pay or QR →") + "</div>" +
+      "</div>" +
     "</div>"
   );
 }
@@ -305,40 +389,74 @@ function renderDashboard(filter) {
 
   var app = document.getElementById("app");
   app.innerHTML =
-    '<div class="tabs">' +
-    '<button data-f="" class="' + (filter === "" ? "active" : "") + '">All bills</button>' +
-    '<button data-f="Unpaid" class="' + (filter === "Unpaid" ? "active" : "") + '">Unpaid</button>' +
-    '<button data-f="Paid" class="' + (filter === "Paid" ? "active" : "") + '">Paid</button>' +
+    '<div class="kpi-grid" id="kpi-row">' +
+      '<div class="kpi-card"><div class="kpi-label">Total Billed</div><div class="kpi-value">—</div><div class="kpi-sub">Querying chain…</div></div>' +
+      '<div class="kpi-card settled"><div class="kpi-label">Settled On-Chain</div><div class="kpi-value">—</div><div class="kpi-sub">Querying chain…</div></div>' +
+      '<div class="kpi-card pending"><div class="kpi-label">Awaiting Settlement</div><div class="kpi-value">—</div><div class="kpi-sub">Querying chain…</div></div>' +
     "</div>" +
-    '<div id="list"><p class="muted">Loading…</p></div>' +
-    '<div class="card"><h3>How the demo works</h3>' +
-    "<p>1. The shop creates a bill on-chain (items + total).<br>" +
-    "2. Connect a NEAR testnet wallet (Meteor) on this page and pay with BSDD via " +
-    "<code>ft_transfer_call</code> on the token contract with the bill id as the message.<br>" +
-    "3. The bills contract flips the bill to Paid after verifying exact payment on-chain.<br>" +
-    "4. The receipt's transaction hash comes from the payment transaction itself — " +
-    "contracts cannot read their own tx hash, so the paying browser records it.</p>" +
-    "<p>Shop: <span class='mono'>" + SHOP_ACCOUNT + "</span> · " +
-    "Token: <span class='mono'>" + TOKEN_CONTRACT + "</span> (BSDD, 6 decimals, mock NEP-141 on testnet).</p></div>";
+    '<div class="section-head">' +
+      '<h2 class="section-title">Invoices &amp; Bills</h2>' +
+      '<div class="tabs">' +
+        '<button data-f="" class="' + (filter === "" ? "active" : "") + '">All bills</button>' +
+        '<button data-f="Unpaid" class="' + (filter === "Unpaid" ? "active" : "") + '">Unpaid</button>' +
+        '<button data-f="Paid" class="' + (filter === "Paid" ? "active" : "") + '">Paid</button>' +
+      "</div>" +
+    "</div>" +
+    '<div id="list"><div class="card"><p class="muted" style="margin:0">Loading bills from NEAR testnet…</p></div></div>' +
+    '<div class="card">' +
+      '<div class="card-title-row"><h3>How On-Chain Settlement Works</h3><span class="mono muted">NEP-141 · NEAR Testnet</span></div>' +
+      '<div class="flow-grid">' +
+        '<div class="flow-step"><span class="flow-num">1</span><strong>Issue Invoice</strong><span>Shop registers items and exact BSDD total on <code>billsettle-bills.testnet</code>.</span></div>' +
+        '<div class="flow-step"><span class="flow-num">2</span><strong>Sign in Browser</strong><span>Customer connects Meteor Wallet and signs <code>ft_transfer_call</code> with <code>msg = bill_id</code>.</span></div>' +
+        '<div class="flow-step"><span class="flow-num">3</span><strong>Atomic Settle</strong><span>Bills contract checks exact amount and flips status to <code>Paid</code> (or auto-refunds).</span></div>' +
+        '<div class="flow-step"><span class="flow-num">4</span><strong>Verified Receipt</strong><span>Frontend confirms <code>get_bill</code> on-chain and links the real Explorer tx hash.</span></div>' +
+      "</div>" +
+      '<div class="muted">Merchant: <span class="mono">' + SHOP_ACCOUNT + "</span> · " +
+      'Token: <span class="mono">' + TOKEN_CONTRACT + "</span> (BSDD, 6 decimals, mock testnet stablecoin).</div>" +
+    "</div>";
+
+  if (cachedSummary) renderKpis(cachedSummary);
 
   app.querySelectorAll(".tabs button").forEach(function (btn) {
     btn.addEventListener("click", function () { renderDashboard(btn.getAttribute("data-f")); });
   });
 
+  if (filter !== "" && !cachedSummary) {
+    rpcView(BILLS_CONTRACT, "list_bills", { status: null, from_index: 0, limit: 50 })
+      .then(function (allBills) {
+        if (seq !== renderSeq) return;
+        cachedSummary = computeSummary(allBills);
+        renderKpis(cachedSummary);
+      })
+      .catch(function () {});
+  }
+
   var args = { status: filter === "" ? null : filter, from_index: 0, limit: 50 };
   rpcView(BILLS_CONTRACT, "list_bills", args)
     .then(function (bills) {
       if (seq !== renderSeq) return;
+      var sorted = bills.slice().sort(compareBillId);
+      if (filter === "") {
+        cachedSummary = computeSummary(sorted);
+        renderKpis(cachedSummary);
+      }
       var list = document.getElementById("list");
       if (!list) return;
-      if (!bills.length) {
-        list.innerHTML = '<p class="muted">No bills in this view yet.</p>';
+      if (!sorted.length) {
+        list.innerHTML = '<div class="card"><p class="muted" style="margin:0">No bills in this view yet.</p></div>';
         return;
       }
-      list.innerHTML = bills.map(billCard).join("");
+      list.innerHTML = '<div class="bill-list">' + sorted.map(billCard).join("") + "</div>";
       list.querySelectorAll(".bill").forEach(function (el) {
-        el.addEventListener("click", function () {
+        var openBill = function () {
           window.location.hash = "#/bill/" + encodeURIComponent(el.getAttribute("data-id"));
+        };
+        el.addEventListener("click", openBill);
+        el.addEventListener("keydown", function (ev) {
+          if (ev.key === "Enter" || ev.key === " ") {
+            ev.preventDefault();
+            openBill();
+          }
         });
       });
     })
@@ -417,13 +535,22 @@ function buildReceiptHtml(b) {
   if (b.status === "Paid") {
     var tx = getReceiptTxHash(b.id);
     return (
-      "<h3>🧾 Receipt</h3>" +
-      "<p>Paid by: <span class='mono'>" + esc(b.payer || "—") + "</span><br>" +
-      "Paid at: " + esc(fmtTime(b.paid_at)) + "<br>" +
+      '<div class="card-title-row"><h3>Verified Receipt</h3><span class="pill paid">Settled On-Chain</span></div>' +
+      '<div class="receipt-grid">' +
+        '<div class="receipt-row"><span class="k">Paid by</span><span class="v mono">' + esc(b.payer || "—") + "</span></div>" +
+        '<div class="receipt-row"><span class="k">Paid at</span><span class="v">' + esc(fmtTime(b.paid_at)) + "</span></div>" +
+        '<div class="receipt-row"><span class="k">Payment tx</span><span class="v">' +
+          (tx
+            ? explorerTxLink(tx)
+            : '<span class="muted" style="font-weight:400">Recorded by paying browser at payment time</span>') +
+        "</span></div>" +
+      "</div>" +
       (tx
-        ? "Payment transaction: " + explorerTxLink(tx)
-        : "Payment transaction hash: recorded by the paying browser/wallet at payment time (this bill was paid from another session, so no hash is stored on-chain).") +
-      "</p>"
+        ? '<div class="pay-box" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:0">' +
+            '<a class="btn sm" href="' + EXPLORER + "/transactions/" + encodeURIComponent(tx) + '" target="_blank" rel="noopener">View on NEAR Explorer ↗</a>' +
+            '<button type="button" class="btn secondary sm" id="copy-tx-btn">Copy tx hash</button>' +
+          "</div>"
+        : "")
     );
   }
 
@@ -434,18 +561,19 @@ function buildReceiptHtml(b) {
       : (walletState.balanceError ? "unavailable (" + esc(walletState.balanceError) + ")" : "checking…");
     var insufficient = walletState.balance !== null && BigInt(walletState.balance) < BigInt(b.total);
     return (
-      "<h3>💳 Pay this bill (testnet)</h3>" +
-      "<p>Connected wallet: <strong class='mono'>" + esc(walletState.accountId) + "</strong><br>" +
-      "Your balance: <strong>" + esc(balText) + "</strong> · " +
-      "Bill total: <strong>" + fmtBSDD(b.total) + "</strong></p>" +
+      '<div class="card-title-row"><h3>Settle Invoice</h3><span class="mono muted">NEAR Testnet</span></div>' +
+      '<div class="wallet-summary-box">' +
+        '<div><span class="muted">Paying account</span><br><strong class="mono">' + esc(walletState.accountId) + "</strong></div>" +
+        '<div style="text-align:right"><span class="muted">Available balance</span><br><strong>' + esc(balText) + "</strong></div>" +
+      "</div>" +
       (insufficient
         ? '<div class="warn">Insufficient BSDD balance (' + esc(fmtBSDD(walletState.balance)) +
-          ") to pay " + fmtBSDD(b.total) + ". Get testnet BSDD first, or switch accounts.</div>"
+          ") to settle " + fmtBSDD(b.total) + ". Mint or transfer testnet BSDD first, or switch accounts.</div>"
         : "") +
       '<div class="pay-box">' +
-      '<button type="button" class="btn" id="pay-bill-btn"' +
-      (insufficient || walletState.busy ? " disabled" : "") + ">" +
-      "Pay " + fmtBSDD(b.total) + "</button>" +
+        '<button type="button" class="btn lg" id="pay-bill-btn"' +
+        (insufficient || walletState.busy ? " disabled" : "") + ">" +
+        "Pay " + fmtBSDD(b.total) + "</button>" +
       "</div>" +
       '<div id="pay-feedback"></div>' +
       '<details class="muted"><summary>Transaction parameters (<code>ft_transfer_call</code>, 1 yoctoNEAR)</summary>' +
@@ -456,7 +584,7 @@ function buildReceiptHtml(b) {
   var connectSection = "";
   if (walletState.ready) {
     connectSection =
-      '<div class="pay-box"><button type="button" class="btn" id="inline-connect-btn">Connect wallet to pay</button></div>';
+      '<div class="pay-box"><button type="button" class="btn lg" id="inline-connect-btn">Connect wallet to pay</button></div>';
   } else if (walletState.failed) {
     connectSection =
       '<p class="muted">In-browser wallet module could not load — you can still pay via CLI or another wallet using the parameters below.</p>';
@@ -466,11 +594,13 @@ function buildReceiptHtml(b) {
   }
 
   return (
-    "<h3>💳 Pay this bill (testnet)</h3>" +
-    "<p>Pay <strong>" + fmtBSDD(b.total) + "</strong> in BSDD from a NEAR testnet wallet:</p>" +
+    '<div class="card-title-row"><h3>Settle Invoice</h3><span class="mono muted">Meteor Wallet</span></div>' +
+    "<p class='muted' style='margin-top:0'>Connect your NEAR testnet wallet to settle <strong>" +
+    fmtBSDD(b.total) + "</strong> in BSDD directly in your browser.</p>" +
     connectSection +
-    pre +
-    "<p class='muted'>Contracts run on NEAR testnet with mock BSDD (6 decimals, no real money).</p>"
+    '<details class="muted"><summary>CLI / external wallet parameters (<code>ft_transfer_call</code>)</summary>' +
+    pre + "</details>" +
+    "<p class='muted' style='margin:10px 0 0'>Mock BSDD on NEAR testnet (6 decimals, no real money).</p>"
   );
 }
 
@@ -486,6 +616,10 @@ function wirePayCardEvents(b) {
     payBtn.addEventListener("click", function () {
       payBill(b);
     });
+  }
+  if (b.status === "Paid") {
+    var tx = getReceiptTxHash(b.id);
+    if (tx) bindCopy("copy-tx-btn", tx, "Copy tx hash");
   }
 }
 
@@ -555,6 +689,7 @@ async function payBill(b) {
     }
 
     if (txHash) saveReceiptTxHash(b.id, txHash);
+    cachedSummary = null;
     walletState.busy = false;
     updateHeaderWallet();
     refreshBalance(walletState.accountId);
@@ -568,7 +703,7 @@ async function payBill(b) {
     setPayFeedback(
       "err",
       esc(msg) + extra +
-      '<br><button type="button" class="btn secondary" id="recheck-bill-btn" style="margin-top:8px">Re-check on-chain status</button>'
+      '<br><button type="button" class="btn secondary sm" id="recheck-bill-btn" style="margin-top:8px">Re-check on-chain status</button>'
     );
     var recheckBtn = document.getElementById("recheck-bill-btn");
     if (recheckBtn) {
@@ -583,7 +718,7 @@ function renderBill(id) {
   var seq = ++renderSeq;
 
   var app = document.getElementById("app");
-  app.innerHTML = '<p class="muted">Loading bill ' + esc(id) + "…</p>";
+  app.innerHTML = '<div class="card"><p class="muted" style="margin:0">Loading bill ' + esc(id) + " from NEAR testnet…</p></div>";
   rpcView(BILLS_CONTRACT, "get_bill", { id: id })
     .then(function (b) {
       if (seq !== renderSeq) return;
@@ -596,25 +731,50 @@ function renderBill(id) {
       var rows = b.items.map(function (it) {
         return "<tr><td>" + esc(it.name) + "</td><td>" + fmtBSDD(it.amount) + "</td></tr>";
       }).join("");
+      var url = billUrl(b.id);
+      var isPaid = b.status === "Paid";
 
       app.innerHTML =
-        '<p><a class="btn secondary" href="#">← Back to dashboard</a></p>' +
-        '<div class="card">' +
-        "<h3>Bill " + esc(b.id) + " " + pill(b.status) + "</h3>" +
-        "<table>" + rows + "</table>" +
-        '<div class="total">Total: ' + fmtBSDD(b.total) + "</div>" +
-        '<p class="meta">Shop: ' + esc(b.shop) + "</p>" +
+        '<div class="detail-topbar">' +
+          '<a class="btn secondary sm" href="#">← Back to dashboard</a>' +
+          '<span class="mono muted">Registry: ' + esc(BILLS_CONTRACT) + " · Bill #" + esc(b.id) + "</span>" +
         "</div>" +
-        '<div class="card"><h3>QR — open this bill</h3>' +
-        '<div class="qrbox" id="qr"></div>' +
-        '<p class="mono" style="text-align:center">' + esc(billUrl(b.id)) + "</p></div>" +
-        '<div class="card" id="pay-card">' + buildReceiptHtml(b) + "</div>";
+        '<div class="bill-grid">' +
+          "<div>" +
+            '<div class="card">' +
+              '<div class="invoice-header">' +
+                "<div>" +
+                  "<h2>Bill " + esc(b.id) + "</h2>" +
+                  '<div class="muted">Merchant: <span class="mono">' + esc(b.shop) + "</span></div>" +
+                "</div>" +
+                pill(b.status) +
+              "</div>" +
+              '<table class="invoice-table">' +
+                "<thead><tr><th>Line Item</th><th>Amount</th></tr></thead>" +
+                "<tbody>" + rows + "</tbody>" +
+              "</table>" +
+              '<div class="invoice-total-bar">' +
+                '<span class="label">' + (isPaid ? "Total Paid" : "Total Due") + "</span>" +
+                '<span class="total">' + fmtBSDD(b.total) + "</span>" +
+              "</div>" +
+            "</div>" +
+            '<div class="card" id="pay-card">' + buildReceiptHtml(b) + "</div>" +
+          "</div>" +
+          '<div class="card qr-card">' +
+            "<h3>QR — Share or Pay</h3>" +
+            '<p class="muted" style="margin:4px 0 0">Scan to open this invoice on any device</p>' +
+            '<div class="qr-frame"><div class="qrbox" id="qr"></div></div>' +
+            '<div class="url-box mono">' + esc(url) + "</div>" +
+            '<button type="button" class="btn secondary sm" id="copy-url-btn" style="width:100%">Copy bill link</button>' +
+          "</div>" +
+        "</div>";
 
       wirePayCardEvents(b);
+      bindCopy("copy-url-btn", url, "Copy bill link");
 
       var qrEl = document.getElementById("qr");
       if (window.QRCode) {
-        new QRCode(qrEl, { text: billUrl(b.id), width: 180, height: 180, correctLevel: QRCode.CorrectLevel.M });
+        new QRCode(qrEl, { text: url, width: 180, height: 180, correctLevel: QRCode.CorrectLevel.M });
       } else {
         qrEl.innerHTML = '<p class="muted">QR library did not load — use the link above.</p>';
       }
