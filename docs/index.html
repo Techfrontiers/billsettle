@@ -5,12 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>BillSettle — small-shop bills, paid and receipted on NEAR</title>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@near-wallet-selector/modal-ui@10.1.4/styles.css">
 <style>
   :root { --ink: #101828; --muted: #667085; --line: #eaecf0; --bg: #f9fafb; --green: #027a48; --green-bg: #ecfdf3; --amber: #b54708; --amber-bg: #fffaeb; --blue: #175cd3; }
   * { box-sizing: border-box; }
   body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--ink); background: var(--bg); }
   header { background: #101828; color: #fff; padding: 28px 20px; }
   header .wrap, main { max-width: 760px; margin: 0 auto; }
+  .header-top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 14px; }
+  .wallet-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.16); padding: 8px 12px; border-radius: 10px; }
+  #wallet-status { font-size: 13px; color: #e4e7ec; line-height: 1.4; }
   h1 { margin: 0 0 6px; font-size: 28px; }
   header p { margin: 4px 0; color: #d0d5dd; }
   .badge { display: inline-block; background: #f79009; color: #101828; font-weight: 700; font-size: 12px; padding: 3px 10px; border-radius: 999px; }
@@ -35,9 +39,16 @@
   .qrbox img, .qrbox canvas { margin: 0 auto; }
   .mono { font-family: ui-monospace, Menlo, monospace; font-size: 13px; word-break: break-all; }
   .muted { color: var(--muted); font-size: 14px; }
-  .err { color: #b42318; background: #fef3f2; border: 1px solid #fecdca; padding: 12px; border-radius: 8px; }
-  .btn { display: inline-block; background: var(--blue); color: #fff !important; text-decoration: none; padding: 10px 18px; border-radius: 8px; font-weight: 600; }
+  .err { color: #b42318; background: #fef3f2; border: 1px solid #fecdca; padding: 12px; border-radius: 8px; margin: 10px 0; font-size: 14px; }
+  .warn { color: var(--amber); background: var(--amber-bg); border: 1px solid #fedf89; padding: 12px; border-radius: 8px; margin: 10px 0; font-size: 14px; }
+  .ok { color: var(--green); background: var(--green-bg); border: 1px solid #abefc6; padding: 12px; border-radius: 8px; margin: 10px 0; font-size: 14px; }
+  .btn { display: inline-block; background: var(--blue); color: #fff !important; text-decoration: none; border: none; padding: 10px 18px; border-radius: 8px; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
   .btn.secondary { background: #fff; color: var(--ink) !important; border: 1px solid var(--line); }
+  .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+  .wallet-bar .btn { padding: 7px 12px; font-size: 13px; }
+  .wallet-bar .btn.secondary { background: rgba(255, 255, 255, 0.14); color: #fff !important; border-color: rgba(255, 255, 255, 0.25); }
+  .pay-box { margin: 12px 0; }
+  details.muted summary { cursor: pointer; }
   code { background: #f2f4f7; padding: 2px 6px; border-radius: 4px; font-size: 13px; }
   pre { background: #101828; color: #d0d5dd; padding: 14px; border-radius: 8px; overflow-x: auto; font-size: 13px; }
 </style>
@@ -45,8 +56,16 @@
 <body>
 <header>
   <div class="wrap">
-    <h1>🧾 BillSettle</h1>
-    <p>Small-shop bills, paid and receipted on NEAR. <span class="badge">TESTNET DEMO — no real money</span></p>
+    <div class="header-top">
+      <div>
+        <h1>🧾 BillSettle</h1>
+        <p>Small-shop bills, paid and receipted on NEAR. <span class="badge">TESTNET DEMO — no real money</span></p>
+      </div>
+      <div class="wallet-bar" aria-live="polite">
+        <span id="wallet-status">View-only mode</span>
+        <button type="button" class="btn secondary" id="wallet-action-btn" disabled>Loading wallet…</button>
+      </div>
+    </div>
     <p class="mono">Bills contract: <a href="https://explorer.testnet.near.org/accounts/billsettle-bills.testnet" target="_blank" rel="noopener">billsettle-bills.testnet</a><br>
     Token contract (BSDD): <a href="https://explorer.testnet.near.org/accounts/billsettle-token.testnet" target="_blank" rel="noopener">billsettle-token.testnet</a></p>
   </div>
