@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>BillSettle — On-Chain Invoice Settlement · Verified by Concordium</title>
+<title>BillSettle — On-Chain Invoice Settlement on NEAR</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -764,243 +764,6 @@
 
   .pay-box { margin: 12px 0; }
 
-  /* Verified by Concordium UI */
-  .registry-chip.ccd-chip {
-    background: rgba(16, 185, 129, 0.1);
-    border-color: rgba(52, 211, 153, 0.32);
-    color: #e2e8f0;
-  }
-
-  .ccd-logo {
-    width: 18px;
-    height: 18px;
-    display: inline-block;
-    flex-shrink: 0;
-    vertical-align: middle;
-  }
-
-  .ccd-logo.lg {
-    width: 30px;
-    height: 30px;
-  }
-
-  .ccd-status-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 11px;
-    font-weight: 600;
-    padding: 2px 8px;
-    border-radius: 999px;
-    border: 1px solid transparent;
-    white-space: nowrap;
-  }
-
-  .ccd-status-pill::before {
-    content: "";
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: currentColor;
-  }
-
-  .ccd-status-pill.ok {
-    color: #057a55;
-    background: #ecfdf5;
-    border-color: #a7f3d0;
-  }
-
-  .ccd-status-pill.pending {
-    color: #b45309;
-    background: #fffbeb;
-    border-color: #fde68a;
-  }
-
-  .ccd-status-pill.err {
-    color: #b42318;
-    background: #fef3f2;
-    border-color: #fecdca;
-  }
-
-  header.topbar .ccd-status-pill.ok {
-    color: #6ee7b7;
-    background: rgba(16, 185, 129, 0.16);
-    border-color: rgba(52, 211, 153, 0.38);
-  }
-
-  header.topbar .ccd-status-pill.pending {
-    color: #fcd34d;
-    background: rgba(245, 158, 11, 0.16);
-    border-color: rgba(245, 158, 11, 0.38);
-  }
-
-  header.topbar .ccd-status-pill.err {
-    color: #fca5a5;
-    background: rgba(239, 68, 68, 0.16);
-    border-color: rgba(239, 68, 68, 0.38);
-  }
-
-  .ccd-card {
-    border-color: #cbd5e1;
-    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-  }
-
-  .ccd-head {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 12px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid var(--line);
-    margin-bottom: 12px;
-  }
-
-  .ccd-brand {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .ccd-brand h3 {
-    margin: 0;
-    font-size: 16px;
-    font-weight: 700;
-  }
-
-  .ccd-meta-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px 12px;
-    margin-bottom: 12px;
-  }
-
-  .ccd-meta-item {
-    background: var(--surface);
-    border: 1px solid var(--line-soft);
-    border-radius: 9px;
-    padding: 9px 11px;
-    font-size: 12.5px;
-    min-width: 0;
-  }
-
-  .ccd-meta-item .k {
-    display: block;
-    color: var(--muted);
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-    margin-bottom: 3px;
-  }
-
-  .ccd-meta-item .v {
-    color: var(--ink);
-    font-weight: 600;
-    word-break: break-all;
-  }
-
-  .ccd-checks {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin: 10px 0 12px;
-  }
-
-  .ccd-check-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 11.5px;
-    font-weight: 600;
-    padding: 3px 9px;
-    border-radius: 7px;
-    border: 1px solid var(--line);
-    background: var(--surface);
-    color: var(--ink-2);
-  }
-
-  .ccd-check-pill.pass {
-    color: var(--green);
-    background: var(--green-bg);
-    border-color: var(--green-border);
-  }
-
-  .ccd-check-pill.warn {
-    color: var(--amber);
-    background: var(--amber-bg);
-    border-color: var(--amber-border);
-  }
-
-  .ccd-links {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    align-items: center;
-  }
-
-  .ccd-anchor-box {
-    margin-top: 14px;
-    padding: 14px 16px;
-    border-radius: 11px;
-    background: #f8fafc;
-    border: 1px solid #cbd5e1;
-  }
-
-  .ccd-anchor-box.needs-pin {
-    background: #fffbeb;
-    border-color: #fde68a;
-  }
-
-  .ccd-sign-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 10px;
-  }
-
-  .ccd-wc-panel {
-    margin-top: 12px;
-    padding: 14px;
-    border-radius: 10px;
-    background: #ffffff;
-    border: 1px solid var(--line);
-    text-align: center;
-  }
-
-  .ccd-wc-qr-wrap {
-    display: inline-block;
-    padding: 10px;
-    background: #ffffff;
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    margin: 8px 0;
-  }
-
-  .ccd-receipt-badge {
-    margin-top: 14px;
-    padding-top: 14px;
-    border-top: 1px solid var(--line);
-  }
-
-  .ccd-receipt-header {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    margin-bottom: 10px;
-  }
-
-  .ccd-receipt-title {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--ink);
-  }
-
   details.muted summary {
     cursor: pointer;
     font-weight: 500;
@@ -1033,7 +796,6 @@
     .kpi-grid { grid-template-columns: 1fr; }
     .flow-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .bill-grid { grid-template-columns: 1fr; }
-    .ccd-meta-grid { grid-template-columns: 1fr; }
   }
 
   @media (max-width: 540px) {
@@ -1081,19 +843,6 @@
       <span class="registry-chip">
         <span>Token (BSDD):</span>
         <a class="mono" href="https://explorer.testnet.near.org/accounts/billsettle-token.testnet" target="_blank" rel="noopener">billsettle-token.testnet ↗</a>
-      </span>
-      <span class="registry-chip ccd-chip" id="ccd-header-chip">
-        <svg class="ccd-logo" viewBox="0 0 88 88" fill="none" aria-hidden="true">
-          <rect x="0.5" y="0.5" width="87" height="87" rx="13.5" fill="#192736" stroke="#354559"/>
-          <path d="M25.9244 44C25.9244 53.9804 34.0071 62.0644 43.9949 62.0644C46.6677 62.0644 49.2041 61.4605 51.4879 60.4221V68.8981C49.1201 69.608 46.6049 70 43.9949 70C29.6395 70 18 58.3668 18 44C18 29.6333 29.6395 18 44.0051 18C46.6152 18 49.1201 18.392 51.4988 19.1019V27.5778C49.215 26.529 46.6787 25.9356 44.0051 25.9356C34.0283 25.9356 25.9353 34.0196 25.9353 44H25.9244ZM43.9949 55.0081C37.9113 55.0081 32.9758 50.0815 32.9758 43.9894C32.9758 37.8973 37.9113 32.9707 43.9949 32.9707C50.0778 32.9707 55.0133 37.9079 55.0133 43.9894C55.0133 50.0709 50.0778 55.0081 43.9949 55.0081ZM67.5585 55.0081H58.297C60.6443 51.9568 62.0647 48.1532 62.0647 44C62.0647 39.8468 60.6443 36.0326 58.2868 32.9813H67.5483C69.1161 36.3293 70 40.0587 70 44C70 47.9413 69.1161 51.6708 67.5483 55.0081" fill="white"/>
-          <path d="M32.9814 43.9992C32.9814 50.0913 37.917 55.0179 44.0005 55.0179C50.0834 55.0179 55.0189 50.0807 55.0189 43.9992C55.0189 37.9177 50.0834 32.9805 44.0005 32.9805C37.917 32.9805 32.9814 37.9071 32.9814 43.9992Z" fill="white"/>
-          <path d="M76 62C76 69.1797 70.1797 75 63 75C55.8203 75 50 69.1797 50 62C50 54.8203 55.8203 49 63 49C70.1797 49 76 54.8203 76 62Z" fill="#0069FF"/>
-          <path d="M76 62C76 54.8203 70.1797 49 63 49C55.8203 49 50 54.8203 50 62C50 69.1797 55.8203 75 63 75C70.1797 75 76 69.1797 76 62ZM78 62C78 70.2843 71.2843 77 63 77C54.7157 77 48 70.2843 48 62C48 53.7157 54.7157 47 63 47C71.2843 47 78 53.7157 78 62Z" fill="#192736"/>
-          <path d="M70.3595 57.335C69.9852 56.9821 69.486 56.7924 68.9717 56.8075C68.4575 56.8226 67.9703 57.0413 67.6172 57.4156L61.2792 64.1356L58.586 61.1336C58.4157 60.9439 58.2098 60.7897 57.9799 60.6796C57.75 60.5696 57.5007 60.5059 57.2462 60.4922C56.7322 60.4645 56.2283 60.6422 55.8453 60.9861C55.4623 61.3299 55.2316 61.8119 55.204 62.3259C55.1763 62.8398 55.354 63.3437 55.6978 63.7267L59.7997 68.2991C59.9793 68.4983 60.1982 68.6581 60.4426 68.7684C60.6871 68.8787 60.9518 68.9372 61.2199 68.94H61.2445C61.5088 68.9399 61.7704 68.8859 62.0131 68.7812C62.2558 68.6765 62.4745 68.5233 62.6559 68.331L70.4401 60.0764C70.7927 59.702 70.9823 59.203 70.9672 58.689C70.9521 58.175 70.7335 57.688 70.3595 57.335Z" fill="white"/>
-        </svg>
-        <span>Verified by Concordium:</span>
-        <a class="mono" href="https://agent-registry-mcp.concordium.com/v1/badge-check/JyP9WvdiYC2ADhyQTirr5" target="_blank" rel="noopener" title="Verify badge live via Concordium Registry MCP">JyP9WvdiYC2ADhyQTirr5 ↗</a>
-        <span class="ccd-status-pill pending" id="ccd-header-pill">Checking…</span>
       </span>
     </div>
   </div>

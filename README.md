@@ -1,22 +1,4 @@
-# BillSettle — small-shop bills, paid and receipted on NEAR · Verified by Concordium
-
-> **Concordium Trusted Agents Hackathon** (solo entry, deadline Dec 10, 2026 06:59 Bangkok, testnet only) + **NEAR Hackathon** bill-payment rail (`billsettle-bills.testnet` & `billsettle-token.testnet` untouched).
-
-## Concordium Trust & Accountability Layer (Testnet)
-
-BillSettle keeps **NEAR testnet** as its stablecoin invoice settlement rail and layers **Concordium** on top for verified human accountability:
-
-- **Registered Native Agent (CIS-8004 `#12802`):** Agent **#1185** (`Active`)
-- **Verified by Concordium Badge (short):** `JyP9WvdiYC2ADhyQTirr5`
-- **CAIP-19 Token Address:** `ccd:4221332d34e1694168c2a0c0b3fd0f27/cis-2:JyP9WvdiYC2ADhyQTirr5`
-- **Verified Owner:** `3fFCiJ13LTXL9j2GaNAAMq5C3xMNpcdQGTyt6VgkCkxjz1SKW9`
-- **Agent Card:** https://techfrontiers.github.io/billsettle/.well-known/agent-card.json
-- **Live Badge Check Endpoint:** https://agent-registry-mcp.concordium.com/v1/badge-check/JyP9WvdiYC2ADhyQTirr5
-- **Registration Tx (Concordium Testnet):** [`8d81b6b7…`](https://ccdexplorer.io/testnet/transaction/8d81b6b70c22a92e2c3590906586ea0d8256f629139b1126771571d504e2bb0e) ([CCDScan](https://testnet.ccdscan.io/?dcount=2&dentity=transaction&dhash=8d81b6b70c22a92e2c3590906586ea0d8256f629139b1126771571d504e2bb0e))
-
-In the frontend (`docs/index.html` + `docs/app.js`), `verifyBadge()` queries Concordium's live Registry MCP REST verifier and checks the served Agent Card SHA-256 hash, rendering the **Verified by Concordium** badge across the header, dashboard, and bill receipts alongside NEAR Explorer links. An owner signing helper (`CIS-8004.setAgentURI` via Mobile Wallet WalletConnect QR or Browser Wallet) is also built directly into the dashboard so the Agent Card URI and SHA-256 hash can be anchored on-chain in one click.
-
----
+# BillSettle — small-shop bills, paid and receipted on NEAR
 
 **NEAR Hackathon: Build Beyond Boundaries — Real-World Money track.**
 Solo entry. Build window Nov 1–14, 2026. Submission due Nov 15, 06:59 Bangkok
