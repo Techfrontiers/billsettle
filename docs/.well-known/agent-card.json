@@ -1,1 +1,69 @@
-{"$comment":"Agent Card for BillSettle (Concordium Trusted Agents Hackathon). Values filled after native registration on testnet, 15 Nov 2026 19:12 (Agent #1185, Token #1185, contract CIS-8004 #12802). Hosted at docs/.well-known/agent-card.json; pin its SHA-256 on-chain via setAgentURI. NOTE: verification.verifyUrl is the EXPECTED badge-check endpoint — UNCONFIRMED, verify at the workshop (Mon 16 Nov 22:00) before relying on it. Badge extension shape follows https://docs.concordium.com/en/mainnet/technical-reference/agent-registry/concordium-badge.html — do NOT move the badge block to the top level.","capabilities":{"extensions":[{"description":"Verified by Concordium badge — on-chain agent identity in a CIS-8004 registry","params":{"contracts":{"cis8004":"ccd:4221332d34e1694168c2a0c0b3fd0f27:12802.0"},"owner":{"account":"ccd:4221332d34e1694168c2a0c0b3fd0f27:3fFCiJ13LTXL9j2GaNAAMq5C3xMNpcdQGTyt6VgkCkxjz1SKW9"},"tokenAddress":"ccd:4221332d34e1694168c2a0c0b3fd0f27/cis-2:JyP9WvdiYC2ADhyQTirr5","verification":{"docs":"https://docs.concordium.com/en/mainnet/technical-reference/agent-registry/concordium-badge.html","mcp":"https://agent-registry-mcp.concordium.com/mcp","service":"Concordium Agent Registry","verifyUrl":"https://agent-registry-mcp.concordium.com/v1/badge-check/JyP9WvdiYC2ADhyQTirr5?network=testnet"},"verify":"Resolve tokenAddress via CIS-8004 agent_of; confirm owner + status is Active + card SHA-256 equals metadata_hash."},"required":false,"uri":"https://docs.concordium.com/a2a-extensions/concordium-badge/v1"}],"pushNotifications":false,"stateTransitionHistory":false,"streaming":false},"description":"Payment agent for small shops: it settles bills in stablecoin, confirms payment on-chain, and issues a receipt with the transaction hash. A verified human stands behind every settlement.","externalReferences":{"$comment":"NEAR side of the agent — the payment rail only (not the registered identity). These URLs are the human-readable pointers in the card; no CIS-8 binding.","demo":"https://techfrontiers.github.io/billsettle/","nearBillsContract":"billsettle-bills.testnet","nearExplorerBills":"https://explorer.testnet.near.org/accounts/billsettle-bills.testnet","nearTokenContract":"billsettle-token.testnet","repository":"https://github.com/Techfrontiers/billsettle"},"name":"BillSettle","registrations":[{"agentId":1185,"agentRegistry":"ccd:4221332d34e1694168c2a0c0b3fd0f27:12802.0"}],"skills":[{"description":"Accept an exact stablecoin payment for a bill id and flip the bill to Paid with an on-chain receipt.","id":"settle-bill","name":"Settle a shop bill","tags":["payments","stablecoin","receipts","small-business"]},{"description":"Given a bill id, return its on-chain status, payer, paid timestamp and receipt transaction hash.","id":"verify-settlement","name":"Verify a settlement"}],"url":"https://techfrontiers.github.io/billsettle/","version":"0.1.0"}
+{
+  "$comment": "Agent Card for BillSettle (Concordium Trusted Agents Hackathon). Values filled after native registration on testnet, 15 Nov 2026 19:12 (Agent #1185, Token #1185, contract CIS-8004 #12802). Hosted at docs/.well-known/agent-card.json; pin its SHA-256 on-chain via setAgentURI. NOTE: verification.verifyUrl is the EXPECTED badge-check endpoint — UNCONFIRMED, verify at the workshop (Mon 16 Nov 22:00) before relying on it. Badge extension shape follows https://docs.concordium.com/en/mainnet/technical-reference/agent-registry/concordium-badge.html — do NOT move the badge block to the top level.",
+  "capabilities": {
+    "extensions": [
+      {
+        "uri": "https://docs.concordium.com/a2a-extensions/concordium-badge/v1",
+        "description": "Verified by Concordium badge — on-chain agent identity in a CIS-8004 registry",
+        "required": false,
+        "params": {
+          "tokenAddress": "ccd:4221332d34e1694168c2a0c0b3fd0f27/cis-2:JyP9WvdiYC2ADhyQTirr5",
+          "owner": {
+            "account": "ccd:4221332d34e1694168c2a0c0b3fd0f27:3fFCiJ13LTXL9j2GaNAAMq5C3xMNpcdQGTyt6VgkCkxjz1SKW9"
+          },
+          "agentWallet": "ccd:4221332d34e1694168c2a0c0b3fd0f27:3fFCiJ13LTXL9j2GaNAAMq5C3xMNpcdQGTyt6VgkCkxjz1SKW9",
+          "contracts": {
+            "cis8004": "ccd:4221332d34e1694168c2a0c0b3fd0f27:12802.0",
+            "cis8": "ccd:4221332d34e1694168c2a0c0b3fd0f27:12801.0"
+          },
+          "verify": "Resolve tokenAddress via CIS-8004 agent_of; confirm owner + status=Active + card SHA-256 == metadata_hash.",
+          "verification": {
+            "service": "Concordium Agent Registry",
+            "verifyUrl": "https://agent-registry-mcp.concordium.com/v1/badge-check/JyP9WvdiYC2ADhyQTirr5",
+            "mcp": "https://agent-registry-mcp.concordium.com/mcp",
+            "docs": "https://docs.concordium.com/en/mainnet/technical-reference/agent-registry/concordium-badge.html"
+          }
+        }
+      }
+    ],
+    "pushNotifications": false,
+    "stateTransitionHistory": false,
+    "streaming": false
+  },
+  "description": "Payment agent for small shops: it settles bills in stablecoin, confirms payment on-chain, and issues a receipt with the transaction hash. A verified human stands behind every settlement.",
+  "externalReferences": {
+    "$comment": "NEAR side of the agent — the payment rail only (not the registered identity). These URLs are the human-readable pointers in the card; no CIS-8 binding.",
+    "demo": "https://techfrontiers.github.io/billsettle/",
+    "nearBillsContract": "billsettle-bills.testnet",
+    "nearExplorerBills": "https://explorer.testnet.near.org/accounts/billsettle-bills.testnet",
+    "nearTokenContract": "billsettle-token.testnet",
+    "repository": "https://github.com/Techfrontiers/billsettle"
+  },
+  "name": "BillSettle",
+  "registrations": [
+    {
+      "agentId": 1185,
+      "agentRegistry": "ccd:4221332d34e1694168c2a0c0b3fd0f27:12802.0"
+    }
+  ],
+  "skills": [
+    {
+      "description": "Accept an exact stablecoin payment for a bill id and flip the bill to Paid with an on-chain receipt.",
+      "id": "settle-bill",
+      "name": "Settle a shop bill",
+      "tags": [
+        "payments",
+        "stablecoin",
+        "receipts",
+        "small-business"
+      ]
+    },
+    {
+      "description": "Given a bill id, return its on-chain status, payer, paid timestamp and receipt transaction hash.",
+      "id": "verify-settlement",
+      "name": "Verify a settlement"
+    }
+  ],
+  "url": "https://techfrontiers.github.io/billsettle/",
+  "version": "0.1.0"
+}
